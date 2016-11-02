@@ -10,3 +10,8 @@ I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassi
 I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\bin\Debug\TextClassification.exe
 I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\bin\Debug\TextClassification.pdb
 I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\obj\Debug\TextClassification.csprojResolveAssemblyReference.cache
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\bin\Debug\TextClassification.exe.config
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\obj\Debug\TextClassification.exe
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\obj\Debug\TextClassification.pdb
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\bin\Debug\TextClassification.exe
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\bin\Debug\TextClassification.pdb

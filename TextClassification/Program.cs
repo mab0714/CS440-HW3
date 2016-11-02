@@ -21,7 +21,7 @@ namespace TextClassification
             }
             catch
             {
-                trainingSet = "I:\\Backup\\Masters\\UIUC\\2016\\Fall\\CS_440\\Homework\\3\\TextClassification\\fisher_train_2topic.txt";
+                trainingSet = "I:\\Backup\\Masters\\UIUC\\2016\\Fall\\CS_440\\Homework\\3\\TextClassification\\CS440-HW3\\fisher_train_2topic.txt";
             }
 
             string testSet = "";
@@ -31,27 +31,25 @@ namespace TextClassification
             }
             catch
             {
-                testSet = "I:\\Backup\\Masters\\UIUC\\2016\\Fall\\CS_440\\Homework\\3\\TextClassification\\fisher_test_2topic.txt";
+                testSet = "I:\\Backup\\Masters\\UIUC\\2016\\Fall\\CS_440\\Homework\\3\\TextClassification\\CS440-HW3\\fisher_test_2topic.txt";
             }
 
             int k = 1;
-            Model mod = new Model("MNB", trainingSet, testSet, k);  //MNB
+            Model mnb = new Model("MNB", trainingSet, testSet, k);  //MNB
 
-            TextClassification.Program test = new TextClassification.Program();
-            test.run_cmd("C:\\Users\\mabiscoc\\Documents\\Visual Studio 2013\\Projects\\TextClassification\\TextClassification\\plot_confusion_matrix.py", "");
+            //TextClassification.Program test = new TextClassification.Program();
+            //test.run_cmd("C:\\Users\\mabiscoc\\Documents\\Visual Studio 2013\\Projects\\TextClassification\\TextClassification\\plot_confusion_matrix.py", "");
 
-            mod.Train();
-            mod.Predict();
+            mnb.Train();
+            mnb.Predict();
 
             // Assignment
             // Document, ACTUAL_PREDICTED
             
             // Get Confusion Matrix
-            int trueN = 0;
             int trueP = 0;
-            int falseN = 0;
-            int falseP = 0;
-            foreach (KeyValuePair<int, string> kvp in mod.Prediction)
+
+            foreach (KeyValuePair<int, string> kvp in mnb.Prediction)
             {
                 int doc = kvp.Key;
                 string assignment = kvp.Value;
@@ -63,13 +61,41 @@ namespace TextClassification
                 {
                     trueP++;
                 }
-
-
             }
 
-            Console.WriteLine("Accuracy: (" + trueP + "/" + mod.Prediction.Count + ") " + (double)trueP / mod.Prediction.Count);
+            Console.WriteLine("Multinomial Naive Bayes Accuracy: (" + trueP + "/" + mnb.Prediction.Count + ") " + (double)trueP / mnb.Prediction.Count);
 
-        do
+            k = 1;
+            Model ber = new Model("BER", trainingSet, testSet, k);  //MNB
+
+            //TextClassification.Program test = new TextClassification.Program();
+            //test.run_cmd("C:\\Users\\mabiscoc\\Documents\\Visual Studio 2013\\Projects\\TextClassification\\TextClassification\\plot_confusion_matrix.py", "");
+
+            ber.Train();
+            ber.Predict();
+
+            // Assignment
+            // Document, ACTUAL_PREDICTED
+
+            // Get Confusion Matrix
+            trueP = 0;
+
+            foreach (KeyValuePair<int, string> kvp in ber.Prediction)
+            {
+                int doc = kvp.Key;
+                string assignment = kvp.Value;
+
+                int actualValue = Int32.Parse(assignment.Split('_')[0]);
+                int predictedValue = Int32.Parse(assignment.Split('_')[1]);
+
+                if (actualValue == predictedValue)
+                {
+                    trueP++;
+                }
+            }
+
+            Console.WriteLine("Bernoulli Naive Bayes Accuracy: (" + trueP + "/" + ber.Prediction.Count + ") " + (double)trueP / ber.Prediction.Count);
+            do
 
             {
                 Console.WriteLine("Press q to quit");

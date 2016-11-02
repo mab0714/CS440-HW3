@@ -19,7 +19,6 @@ namespace TextClassification
         private Dictionary<string, Dictionary<string, int>> _trainingData = new Dictionary<string, Dictionary<string, int>>();
         private Dictionary<string, double> _likelihood = new Dictionary<string, double>();
         private Dictionary<string, double> _prior = new Dictionary<string, double>();
-        private Dictionary<string, double> _posterior = new Dictionary<string, double>();
         private Dictionary<string, int> _classCounts = new Dictionary<string, int>();
         private Dictionary<int, string> _prediction = new Dictionary<int, string>();
 
@@ -158,13 +157,13 @@ namespace TextClassification
                 {
                     _prior.Add(kvp.Key, (double)_classCounts[kvp.Key] / _trainingSize);
                 }
+            int uniqueWords = getUniqueWords();
 
             if (this._type.Equals("MNB"))
             {
                 // Multinomial Naive Bayes
                 // Calculate Likelihoods for each word in each class
 
-                int uniqueWords = getUniqueWords();
                 // Loop each class
                 foreach (KeyValuePair<string, Dictionary<string, int>> kvp in _trainingData)
                 {
@@ -272,8 +271,10 @@ namespace TextClassification
                 foreach (KeyValuePair<string, Dictionary<string, int>> kvp in _trainingData)
                 {
                     // Loop each word in the class
-                    foreach (KeyValuePair<string, int> kvp2 in kvp.Value) {
-                        _likelihood.Add(kvp2.Key + "|" + kvp.Key, (double)getDocsContainingWord(kvp2.Key, docs, kvp.Key) / _classCounts[kvp.Key]);                        
+                    foreach (KeyValuePair<string, int> kvp2 in kvp.Value)
+                    {
+                        //_likelihood.Add(kvp2.Key + "|" + kvp.Key, (double)(getDocsContainingWord(kvp2.Key, docs, kvp.Key) + _smoothingConstant)/(_classCounts[kvp.Key]+uniqueWords));
+                        _likelihood.Add(kvp2.Key + "|" + kvp.Key, (double)getDocsContainingWord(kvp2.Key, docs, kvp.Key)/_classCounts[kvp.Key]);
                     }
                 }
 
@@ -284,63 +285,58 @@ namespace TextClassification
         {
              string[] docs = System.IO.File.ReadAllLines(_testSetFile);
              int docId = 0;   
-                _testSize = docs.Count();
+             _testSize = docs.Count();
+            Dictionary<string, double> posteriorDict = new Dictionary<string, double>();
 
-                // Calculate Posterior Probabilities
-                // Loop each document
-                foreach (string doc in docs)
+            // Calculate Posterior Probabilities
+            // Loop each document
+            foreach (string doc in docs)
+             {
+                string actualClass = doc.Split(' ')[0];
+                string words = doc.Substring(doc.IndexOf(' ') + 1);
+
+                // Loop each class
+                foreach (KeyValuePair<string, Dictionary<string, int>> kvp in _trainingData) 
                 {
-                    string actualClass = doc.Split(' ')[0];
-                    string words = doc.Substring(doc.IndexOf(' ') + 1);
                     double posterior = 0.0; // 1.0;
-
-                    // Loop each class
-                    foreach (KeyValuePair<string, Dictionary<string, int>> kvp in _trainingData) 
+                    double likelihood = 0.0;
+                    if (kvp.Key.Equals("1") || kvp.Key.Equals("-1"))
                     {
-                        // Loop each word
-                        foreach (string word in words.Split(' ').ToList())
-                        {
-                            string wd = word.Split(':')[0];
-    
-                            // Calculate product of all likelihoods for the given class...word|class ex: brad|-1
-                            try 
-                            { 
-                                //posterior = posterior * _likelihood[wd + "|" + kvp.Key];    
-
-                                // to prevent underflow, use log
-                                posterior = posterior + Math.Log10(_likelihood[wd + "|" + kvp.Key]);
-                            }
-                            catch
-                            {
-                                // ignore words that don't appear in the dictionary
-                                ;
-                            }
-                        }
-                        // multiply by prior of the class
-                        //posterior = posterior * _prior[kvp.Key];
-                        posterior = Math.Log10(_prior[kvp.Key]) + posterior;
-
-                        // store max posterior value for each class
-                        // assignedClass will mark what it should be assigned too, while actualClass is the correct value
-                        if (_posterior.ContainsKey(kvp.Key)) {
-                            if (_posterior[kvp.Key] < posterior) 
-                            {
-                                _posterior[kvp.Key] = posterior;
-                            }
-                        }
-                        else
-                        {
-                            _posterior.Add(kvp.Key, posterior);
-                        }
-
+                        ;
                     }
-                
-                    Dictionary<string, double> sortedPosterior = _posterior.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value);
-                    // Doc, ACTUAL_PREDICTED class
-                    _prediction.Add(docId, actualClass + "_" + sortedPosterior.First().Key);
-                    Console.WriteLine(actualClass + " " + sortedPosterior.First().Key);
-                    docId++;
+                    // Loop each word
+                    foreach (string word in words.Split(' ').ToList())
+                    {
+                        string wd = word.Split(':')[0];
+    
+                        // Calculate product of all likelihoods for the given class...word|class ex: brad|-1
+                        try 
+                        {
+                            //posterior = posterior * _likelihood[wd + "|" + kvp.Key];    
+
+                            // to prevent underflow, use log
+                            likelihood = likelihood + Math.Log10(_likelihood[wd + "|" + kvp.Key]);
+                        }
+                        catch
+                        {
+                            // ignore words that don't appear in the dictionary
+                            ;
+                        }
+                    }
+                    // multiply by prior of the class
+                    //posterior = posterior * _prior[kvp.Key];
+                    posterior = Math.Log10(_prior[kvp.Key]) + likelihood;
+
+                    posteriorDict.Add(kvp.Key, posterior);
+
                 }
+                
+                Dictionary<string, double> sortedPosterior = posteriorDict.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value);
+                // Doc, ACTUAL_PREDICTED class
+                _prediction.Add(docId, actualClass + "_" + sortedPosterior.First().Key);
+                posteriorDict.Clear();
+                docId++;
+            }
         }
 
 
