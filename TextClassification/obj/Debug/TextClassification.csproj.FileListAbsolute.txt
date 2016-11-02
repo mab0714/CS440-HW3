@@ -1,0 +1,12 @@
+C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\TextClassification\bin\Debug\TextClassification.exe.config
+C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\TextClassification\bin\Debug\TextClassification.exe
+C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\TextClassification\bin\Debug\TextClassification.pdb
+C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\TextClassification\obj\Debug\TextClassification.exe
+C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\TextClassification\obj\Debug\TextClassification.pdb
+C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\TextClassification\obj\Debug\TextClassification.csprojResolveAssemblyReference.cache
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\bin\Debug\TextClassification.exe.config
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\obj\Debug\TextClassification.exe
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\obj\Debug\TextClassification.pdb
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\bin\Debug\TextClassification.exe
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\bin\Debug\TextClassification.pdb
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\TextClassification\obj\Debug\TextClassification.csprojResolveAssemblyReference.cache

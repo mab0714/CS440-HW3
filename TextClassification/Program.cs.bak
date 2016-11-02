@@ -1,0 +1,612 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using System.Threading;
+
+namespace WordSudoku
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Word Sudoku: Initial Board Data
+            string sudokuBoardFile = "";
+            try
+            { 
+                sudokuBoardFile = args[0];
+            }
+            catch
+            {
+                sudokuBoardFile = "I:\\Backup\\Masters\\UIUC\\2016\\Fall\\CS_440\\Homework\\2\\grid1.txt";
+            }
+
+            char[,] sudokuBoardData = new char[9,9];
+            Dictionary<string, int> variablePriority = new Dictionary<string, int>();
+            List<string> givenHints = new List<string>();
+
+            int x = 0;
+            int y = 8;
+
+            string[] lines = System.IO.File.ReadAllLines(sudokuBoardFile);
+
+            // Assign the contents of the file to the board
+            foreach (string line in lines)
+            {
+
+                List<char> sublist = new List<char>();
+                foreach (char c in line.ToCharArray())
+                {
+                    sudokuBoardData[x, y] = c;                    
+                    if (!c.Equals('_'))
+                    {
+                        givenHints.Add(x + "_" + y + "_" + c);                        
+                    }
+                    else
+                    {
+                        // only add variables, aka "_"
+                        variablePriority.Add(x + "_" + y, (8 - x + y));
+                    }
+                    x++;
+                }
+                x = 0;
+                y--;
+
+            }
+
+            // Word Sudoku: Word Bank
+            string sudokuWordBankFile = "";
+            try
+            {
+                sudokuWordBankFile = args[0];
+            }
+            catch
+            {
+                sudokuWordBankFile = "I:\\Backup\\Masters\\UIUC\\2016\\Fall\\CS_440\\Homework\\2\\bank1.txt";
+            }
+
+            lines = System.IO.File.ReadAllLines(sudokuWordBankFile);
+            List<string> sudokuWordBankList = new List<string>();
+            foreach (string line in lines)
+            {
+                sudokuWordBankList.Add(line.ToUpper());
+            }
+
+            // sort list (longest first, ties are sorted alphabetically
+            sudokuWordBankList = sudokuWordBankList.OrderByDescending(aux => aux.Length).ToList();
+
+            List<String> sudokuUsedWordList = new List<String>();
+            List<String> sudokuAssignedWordList = new List<string>();
+
+            // Dictionary of possible values
+            //Dictionary<string, List<string>> possibleValuesDict = new Dictionary<string, List<string>>();
+
+            // Calculate possible values that don't violate any constraints
+            //possibleValuesDict = calcPossibleValues(sudokuBoardData, sudokuWordBankList, sudokuUsedWordList, givenHints);
+
+            List<Node> visitedNodes = new List<Node>();
+            int refreshDelayMS = 1;
+            bool found = false;
+
+
+
+            //Console.WriteLine(args[0]);
+            Thread.Sleep(refreshDelayMS);
+            Console.Clear();
+            
+            // Start State 
+            Display(sudokuBoardData, givenHints);
+
+            //string algorithm = "";
+            //int value = 0;
+            //bool keepAsking = true;
+            //while (keepAsking)
+            //{
+            //    Console.WriteLine("Navigating through: " + sudokuBoardData);
+
+            //    Console.WriteLine("What algorithm do you want to run? (1-4)");
+            //    Console.WriteLine("1 for DFS");
+            //    Console.WriteLine("2 for BFS");
+            //    Console.WriteLine("3 for Greedy");
+            //    Console.WriteLine("4 for A*");
+            //    algorithm = Console.ReadLine(); // Read string from console
+            //    if (int.TryParse(algorithm, out value)) // Try to parse the string as an integer
+            //    {
+            //        if (value > 4)
+            //        {
+            //            Console.WriteLine("Please enter value between 1 and 4!");
+            //            continue;
+            //        }
+            //        else
+            //        {
+            //            keepAsking = false;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine("Not an integer!");
+            //    }
+
+            //}
+            //keepAsking = true;
+            //int maxDepth = 0;
+            //while (keepAsking)
+            //{
+            //    Console.WriteLine("What depth do you want to run (integer)");
+            //    algorithm = Console.ReadLine(); // Read string from console
+            //    if (int.TryParse(algorithm, out maxDepth)) // Try to parse the string as an integer
+            //    {
+            //        keepAsking = false;
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine("Not an integer!");
+            //    }
+
+            //}
+
+
+            ////Random rand = new Random();
+            // Log start of search
+            DateTime start = DateTime.Now;
+
+            Node startStateNode = new Node(sudokuBoardData, sudokuWordBankList, sudokuUsedWordList, givenHints, 0, 0, variablePriority, null);
+            Node currentNode = startStateNode;
+
+            //startStateNode.showNodeInfo();
+            //startStateNode.findEligibleAssignments();
+
+            //foreach (Node n in startStateNode.childNodes)
+            //{
+            //    n.showNodeInfo();
+            //}
+            // DFS
+
+            List<Node> pathToGoalState = new List<Node>();
+            List<Node> otherChildNodes = new List<Node>();
+            int pruningStrategy = 2;
+            found = findDFSBackTrackingPath(currentNode, visitedNodes, pathToGoalState, otherChildNodes, pruningStrategy);
+            //found = findBackTrackingPath(currentNode, visitedNodes, pathToGoalState, otherChildNodes, pruningStrategy);
+
+            // Log end of search
+            DateTime end = DateTime.Now;
+            List<string> orderOfAssignment = new List<string>();
+            if (found)
+            {
+                Console.Clear();
+                Console.WriteLine("****************");
+                Console.WriteLine("SOLUTION FOUND!");
+                Console.WriteLine("Summary: ");
+                Console.WriteLine(" Board: " + sudokuBoardFile);
+                Console.WriteLine(" WordBank: " + sudokuWordBankFile);
+                Console.Write(" Pruning Strategy: ");
+                if (pruningStrategy == 0)
+                {
+                    Console.WriteLine("Brute Force");
+                }
+                else if (pruningStrategy == 1)
+                {
+                    Console.WriteLine("Forward Checking");
+                }
+                else if (pruningStrategy == 2)
+                {
+                    Console.WriteLine("Arc Consistency");
+                }
+
+                Console.WriteLine(" Search Started: " + start);
+                Console.WriteLine(" Search Ended: " + end);
+                Console.WriteLine(" Duration: " + (end - start));
+                Console.WriteLine(" Nodes visited: " + visitedNodes.Count());
+                // Display the finalPath backwards
+                pathToGoalState.Reverse();
+                foreach (Node n in pathToGoalState)
+                {
+                    n.showNodeInfo();
+                    orderOfAssignment.Add(n.Assignment);
+                }
+                Console.WriteLine("Assignment: ");
+                foreach (string assignment in orderOfAssignment)
+                {
+                    Console.WriteLine(assignment);
+                }
+                Console.WriteLine("****************");
+
+            }
+            else
+            {
+                Console.Clear();
+                Console.WriteLine("****************");
+                Console.WriteLine("NO SOLUTION FOUND!");
+                Console.WriteLine("Summary: ");
+                Console.WriteLine(" Board: " + sudokuBoardFile);
+                Console.WriteLine(" WordBank: " + sudokuWordBankFile);
+                Console.Write(" Pruning Strategy: ");
+                if (pruningStrategy == 0)
+                {
+                    Console.WriteLine("Brute Force");
+                }
+                else if (pruningStrategy == 1)
+                {
+                    Console.WriteLine("Forward Checking");
+                }
+                else if (pruningStrategy == 2)
+                {
+                    Console.WriteLine("Arc Consistency");
+                }                
+
+                Console.WriteLine(" Search Started: " + start);
+                Console.WriteLine(" Search Ended: " + end);
+                Console.WriteLine(" Duration: " + (end - start));
+                Console.WriteLine(" Nodes visited: " + visitedNodes.Count());
+                Console.WriteLine("****************");
+            }
+
+        do
+            {
+                Console.WriteLine("Press q to quit");
+            } while (Console.ReadKey().KeyChar != 'q');
+
+        }
+
+        static bool findDFSBackTrackingPath(Node currentNode,  List<Node> visitedNodes, List<Node> finalPathOfNodes, List<Node> otherChildNodes, int pruning)
+        {                        
+            // In case of backtracking, no need to add a revisited node 
+            // Perhaps a wall was hit, and backtracking is necessary.  No need to add the
+            // revisited node again.
+            if (!visitedNodes.Contains(currentNode))
+            {
+                visitedNodes.Add(currentNode);
+            }
+
+            Console.Clear();
+            Display(currentNode.SudokuBoardData, currentNode.GivenHints);
+
+            Node nextNode = new Node(currentNode.SudokuBoardData, currentNode.SudokuWordBankList, currentNode.SudokuUsedWordList, currentNode.GivenHints, currentNode.x, currentNode.y, currentNode.CurrentVariablePriority, currentNode);
+
+            if (AssignmentComplete(currentNode.SudokuBoardData))
+            {
+                finalPathOfNodes.Clear();
+                finalPathOfNodes.Add(currentNode);
+
+                while (currentNode.parentNode != null)
+                {
+
+                    nextNode = currentNode.parentNode;
+                    finalPathOfNodes.Add(nextNode);
+                    currentNode = nextNode;
+                }
+
+                Console.Clear();
+                Display(currentNode.SudokuBoardData, currentNode.GivenHints);
+
+                return true;
+            }
+            else
+            {                
+
+                // Make assignment
+                try
+                {
+
+                    currentNode.showNodeInfo();
+
+                    string chosenDirection = "";
+                    string chosenWord = "";
+                    int offset = 0;
+                    
+                    // try to choose the best variable
+                    // Minimum remaining values dictate which is the most constrained variables.                    
+                    currentNode.PossibleValuesDict = Node.calcPossibleValues(currentNode.SudokuBoardData, currentNode.SudokuWordBankList, currentNode.SudokuUsedWordList, currentNode.GivenHints);
+
+                    // loop through all possible values in each 
+                    currentNode.CurrentVariablePriority.Clear();
+                    foreach (KeyValuePair<string, List<String>> variable in currentNode.PossibleValuesDict)
+                    {
+                        if (currentNode.SudokuBoardData[Int32.Parse(variable.Key.Split('_')[0]), Int32.Parse(variable.Key.Split('_')[1])] == '_')
+                        {
+                            currentNode.CurrentVariablePriority.Add(variable.Key, variable.Value.Count);
+                        }                    
+                    }
+
+                    var keysWithMatchingValues = currentNode.CurrentVariablePriority.Where(p => p.Value == currentNode.CurrentVariablePriority.Values.Min()).Select(p => p.Key);
+
+                    // if there is a tie
+                    // loop keysWithMatchingValues
+                    // pick the variable, which has the biggest word
+                    int longestWord = 0;
+                    string mostConstainingVariable = "";
+                    foreach (string key in keysWithMatchingValues)
+                    {                       
+                        foreach (string l in currentNode.PossibleValuesDict[key])
+                        {
+                            if (l.Length > longestWord)
+                            {
+                                longestWord = l.Length;
+                                mostConstainingVariable = key;
+                            }
+                        }
+                    }
+
+                    int VariableX = Int32.Parse(mostConstainingVariable.Split('_')[0]);
+                    int VariableY = Int32.Parse(mostConstainingVariable.Split('_')[1]);
+
+                    currentNode.x = VariableX;
+                    currentNode.y = VariableY;
+
+                    currentNode.findEligibleAssignments();
+
+                    if (currentNode.childNodes != null && currentNode.childNodes.Count > 0) {           
+                        // check consistency...loop possible values
+                        // remove choices that are inconsistent
+                        // then loop through new consistent choices
+                        
+                                     
+                        foreach (Node n in currentNode.childNodes.ToList())
+                        {
+                            //if (visitedNodes.Contains(n))
+                            //{
+                            //    continue;
+                            //}
+                               //n.showNodeInfo();
+                            if (pruning == 0)
+                            {
+                                if (findDFSBackTrackingPath(n, visitedNodes, finalPathOfNodes, otherChildNodes, pruning))
+                                {
+                                    return true;
+                                }
+                            }
+                            else if (pruning == 1)
+                            {
+                                // Does this assignment cause inconsistency?  Arc consistency, need to check every value that can be assigned.  check if all values are safe?
+                                // Check if any value in the dictionary has no choices
+                                // Linq Min
+                                List<string> newArcWordList = new List<string>(n.SudokuWordBankList);
+                                List<string> newArcUsedWordList = new List<string>(n.SudokuUsedWordList);
+
+                                char[,] newArcBoard = new char[9, 9];
+                                for (int j = 0; j < 9; j++)
+                                {
+                                    for (int k = 0; k < 9; k++)
+                                    {
+                                        newArcBoard[j, k] = n.SudokuBoardData[j, k];
+                                    }
+                                }
+
+                                Node ArcCheckNode = new Node(newArcBoard, newArcWordList.ToList<string>(), newArcUsedWordList.ToList<string>(), n.GivenHints, n.x, n.y, n.CurrentVariablePriority, n.parentNode);
+
+
+                                if (n.Assignment.Split('_')[0].Equals("H"))
+                                {
+                                    ArcCheckNode.SudokuBoardData = ArcCheckNode.updateBoard(ArcCheckNode.SudokuBoardData, chosenDirection, ArcCheckNode.x - offset, ArcCheckNode.y, chosenWord, ArcCheckNode.CurrentVariablePriority);
+                                }
+                                else
+                                {
+                                    ArcCheckNode.SudokuBoardData = ArcCheckNode.updateBoard(ArcCheckNode.SudokuBoardData, chosenDirection, ArcCheckNode.x, ArcCheckNode.y + offset, chosenWord, ArcCheckNode.CurrentVariablePriority);
+                                }
+
+                                ArcCheckNode.SudokuUsedWordList.Add(chosenWord);
+                                ArcCheckNode.SudokuWordBankList.Remove(chosenWord);
+                                ArcCheckNode.PossibleValuesDict = Node.calcPossibleValues(ArcCheckNode.SudokuBoardData, ArcCheckNode.SudokuWordBankList, ArcCheckNode.SudokuUsedWordList, ArcCheckNode.GivenHints);
+                                bool isAssignmentSafe = true;
+                                // Loop all variables and check if locations left with '_' have options
+                                for (int y = 8; y >= 0; y--)
+                                {
+                                    for (int x = 0; x < 9; x++)
+                                    {
+                                        if (ArcCheckNode.SudokuBoardData[x, y] == '_')
+                                        {
+                                            if (ArcCheckNode.PossibleValuesDict[x + "_" + y].Count == 0)
+                                            {
+                                                isAssignmentSafe = false;
+                                                break;
+                                            }
+                                        };
+                                    }
+                                    if (!isAssignmentSafe)
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                if (isAssignmentSafe)
+                                {
+                                    // Keep in choices, but do nothing, keep checking consistency to reduce branching factor in case of backtracking
+                                    //;
+                                    // Assignment Made, move down the tree recursively, pass the newly assigned currentNode down
+                                    if (findDFSBackTrackingPath(n, visitedNodes, finalPathOfNodes, otherChildNodes, pruning))
+                                    {
+                                        return true;
+                                    }
+
+                                }
+                            }
+                            else if (pruning == 2)
+                            {
+                                // Does this assignment cause inconsistency?  Arc consistency, need to check every value that can be assigned.  check if all values are safe?
+                                // Check if any value in the dictionary has no choices
+                                // Linq Min
+                                List<string> newArcWordList = new List<string>(n.SudokuWordBankList);
+                                List<string> newArcUsedWordList = new List<string>(n.SudokuUsedWordList);
+
+                                char[,] newArcBoard = new char[9, 9];
+                                for (int j = 0; j < 9; j++)
+                                {
+                                    for (int k = 0; k < 9; k++)
+                                    {
+                                        newArcBoard[j, k] = n.SudokuBoardData[j, k];
+                                    }
+                                }
+
+                                Node ArcCheckNode = new Node(newArcBoard, newArcWordList.ToList<string>(), newArcUsedWordList.ToList<string>(), n.GivenHints, n.x, n.y, n.CurrentVariablePriority, n.parentNode);
+
+
+                                if (n.Assignment.Split('_')[0].Equals("H"))
+                                {
+                                    ArcCheckNode.SudokuBoardData = ArcCheckNode.updateBoard(ArcCheckNode.SudokuBoardData, chosenDirection, ArcCheckNode.x - offset, ArcCheckNode.y, chosenWord, ArcCheckNode.CurrentVariablePriority);
+                                }
+                                else
+                                {
+                                    ArcCheckNode.SudokuBoardData = ArcCheckNode.updateBoard(ArcCheckNode.SudokuBoardData, chosenDirection, ArcCheckNode.x, ArcCheckNode.y + offset, chosenWord, ArcCheckNode.CurrentVariablePriority);
+                                }
+
+                                ArcCheckNode.SudokuUsedWordList.Add(chosenWord);
+                                ArcCheckNode.SudokuWordBankList.Remove(chosenWord);
+                                ArcCheckNode.PossibleValuesDict = Node.calcPossibleValues(ArcCheckNode.SudokuBoardData, ArcCheckNode.SudokuWordBankList, ArcCheckNode.SudokuUsedWordList, ArcCheckNode.GivenHints);
+                                bool isAssignmentSafe = true;
+                                // Loop all variables and check if locations left with '_' have options
+                                for (int y = 8; y >= 0; y--)
+                                {
+                                    for (int x = 0; x < 9; x++)
+                                    {
+                                        if (ArcCheckNode.SudokuBoardData[x, y] == '_')
+                                        {
+                                            if (ArcCheckNode.PossibleValuesDict[x + "_" + y].Count == 0)
+                                            {
+                                                isAssignmentSafe = false;
+                                                break;
+                                            }
+                                        };
+                                    }
+                                    if (!isAssignmentSafe)
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                if (!isAssignmentSafe)
+                                {
+                                    currentNode.childNodes.Remove(n);
+                                }
+
+                            }
+                            //else
+                            //{
+                            //    // Remove unsafe assignents
+                            //    currentNode.childNodes.Remove(n);
+                            //}                       
+                        }
+
+                        if (pruning == 2)
+                        {
+                            if (currentNode.childNodes.Count > 0)
+                            {
+                                foreach (Node n in currentNode.childNodes)
+                                {
+                                    //if (visitedNodes.Contains(n))
+                                    //{
+                                    //    continue;
+                                    //}
+
+                                    n.showNodeInfo();
+                                    Console.WriteLine(" Number of visisted Nodes: " + visitedNodes.Count());
+
+                                    if (findDFSBackTrackingPath(n, visitedNodes, finalPathOfNodes, otherChildNodes, pruning))
+                                    {
+                                        return true;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                return false;
+                            }
+
+                        }
+
+                        //// Choose from consistent variables
+                        //foreach (Node n in currentNode.childNodes)
+                        //{
+                        //    if (visitedNodes.Contains(n))
+                        //    {
+                        //        continue;
+                        //    }
+
+                        //    n.showNodeInfo();
+                        //    Console.WriteLine(" Number of visisted Nodes: " + visitedNodes.Count());
+
+                        //    if (findDFSBackTrackingPath(n, visitedNodes, finalPathOfNodes, otherChildNodes))
+                        //    {
+                        //        return true;
+                        //    }
+                        //}                        
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                    // No safe children found, go back to parent
+                    //if (findDFSBackTrackingPath(currentNode.parentNode, visitedNodes, finalPathOfNodes, otherChildNodes))
+                    //{
+                    //    return true;
+                    //}
+                    return false;           
+
+                }
+                catch (Exception e)
+                {
+
+                    ;
+
+                }
+
+            }
+            //// remove a word?  grid 3 hit here
+            //currentNode.SudokuWordBankList.Remove(currentNode.SudokuWordBankList[currentNode.SudokuWordBankList.Count-1]);
+            //if (findDFSBackTrackingPath(currentNode, visitedNodes, finalPathOfNodes, otherChildNodes))
+            //{
+            //    return true;
+            //}
+            return false;
+
+        }    
+
+        static bool AssignmentComplete(char[,] board)
+        {
+            // Find any '_' to indicate incomplete assigments
+
+            for (int y = 8; y >= 0; y--)
+            {
+                for (int x = 0; x < 9; x++)
+                {
+                    if (board[x, y] == '_')
+                    {
+                        return false;
+                    };
+                }
+                
+            }
+
+            return true;
+        }
+
+        static void Display(char[,] board, List<string> givenHints)
+        {
+            //
+            // Display everything in the List.
+            //
+            Console.WriteLine("Word Sudoku Board:");
+
+            for (int y = 8; y >= 0; y--)
+            {
+                for (int x = 0; x < 9; x++)
+                {
+                    foreach (string hint in givenHints)
+                    {
+                        if (Int32.Parse(hint.Split('_')[0]) == x && Int32.Parse(hint.Split('_')[1]) == y)
+                        {
+                            Console.BackgroundColor = ConsoleColor.Yellow;
+                        }
+                        
+                    }
+                    Console.Write(board[x,y]);
+                }
+                Console.WriteLine();
+            }
+
+            Console.WriteLine();
+            Console.WriteLine();
+        }
+    }
+}
