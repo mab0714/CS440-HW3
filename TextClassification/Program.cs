@@ -65,6 +65,23 @@ namespace TextClassification
 
             Console.WriteLine("Multinomial Naive Bayes Accuracy: (" + trueP + "/" + mnb.Prediction.Count + ") " + (double)trueP / mnb.Prediction.Count);
 
+            foreach(KeyValuePair<string, double> kvp in mnb.Prior)
+            {
+                Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
+                int i = 1;
+                foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
+                {
+                    Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
+                    i++;
+                    if (i > 10)
+                    {
+                        break;
+                    }
+                }
+                //mnb.Likelihood
+            }
+
+
             k = 1;
             Model ber = new Model("BER", trainingSet, testSet, k);  //MNB
 
@@ -95,6 +112,22 @@ namespace TextClassification
             }
 
             Console.WriteLine("Bernoulli Naive Bayes Accuracy: (" + trueP + "/" + ber.Prediction.Count + ") " + (double)trueP / ber.Prediction.Count);
+
+            foreach (KeyValuePair<string, double> kvp in mnb.Prior)
+            {
+                Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
+                int i = 1;
+                foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
+                {
+                    Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
+                    i++;
+                    if (i > 10)
+                    {
+                        break;
+                    }
+                }
+                //mnb.Likelihood
+            }
             do
 
             {
