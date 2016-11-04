@@ -149,8 +149,30 @@ namespace TextClassification
             if (modelToRun == 2 || modelToRun == 3)
             {                           
 
+<<<<<<< HEAD
                 //TextClassification.Program test = new TextClassification.Program();
                 //test.run_cmd("C:\\Users\\mabiscoc\\Documents\\Visual Studio 2013\\Projects\\TextClassification\\TextClassification\\plot_confusion_matrix.py", "");
+=======
+            foreach(KeyValuePair<string, double> kvp in mnb.Prior)
+            {
+                Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
+                int i = 1;
+                foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
+                {
+                    Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
+                    i++;
+                    if (i > 10)
+                    {
+                        break;
+                    }
+                }
+                //mnb.Likelihood
+            }
+
+
+            k = 1;
+            Model ber = new Model("BER", trainingSet, testSet, k);  //MNB
+>>>>>>> origin/master
 
                 DateTime startTrain = DateTime.Now;
                 ber.Train();
@@ -210,6 +232,7 @@ namespace TextClassification
             string[] docs = System.IO.File.ReadAllLines(testSet);
             int docId = 0;
 
+<<<<<<< HEAD
             string wordCloud = testSet;
             wordCloud = wordCloud.Substring(0, wordCloud.IndexOf('.')) + ".htm";
 
@@ -221,6 +244,26 @@ namespace TextClassification
                 file.WriteLine("<title>Word Clouds</title>");
                 file.WriteLine("</head>");
                 file.WriteLine("<body>");
+=======
+            Console.WriteLine("Bernoulli Naive Bayes Accuracy: (" + trueP + "/" + ber.Prediction.Count + ") " + (double)trueP / ber.Prediction.Count);
+
+            foreach (KeyValuePair<string, double> kvp in mnb.Prior)
+            {
+                Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
+                int i = 1;
+                foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
+                {
+                    Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
+                    i++;
+                    if (i > 10)
+                    {
+                        break;
+                    }
+                }
+                //mnb.Likelihood
+            }
+            do
+>>>>>>> origin/master
 
                 if (modelToRun == 1 || modelToRun == 3)
                 {

@@ -408,12 +408,20 @@ namespace TextClassification
                                 ;
                             }
                         }
+<<<<<<< HEAD
                         // multiply by prior of the class
                         //posterior = posterior * _prior[kvp.Key];
                         posterior = Math.Log10(_prior[kvp.Key]) + likelihood;
                         posteriorDict.Add(kvp.Key, posterior);
 
                     }
+=======
+                    }
+                    // multiply by prior of the class
+                    //posterior = posterior * _prior[kvp.Key];
+                    posterior = Math.Log10(_prior[kvp.Key]) + likelihood;
+                    posteriorDict.Add(kvp.Key, posterior);
+>>>>>>> origin/master
 
                     Dictionary<string, double> sortedPosterior = posteriorDict.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value);
                     // Doc, ACTUAL_PREDICTED class
