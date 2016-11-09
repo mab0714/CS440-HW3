@@ -20,3 +20,4 @@ C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\CS440
 C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\CS440-HW3\TextClassification\obj\Debug\TextClassification.pdb
 C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\CS440-HW3\TextClassification\bin\Debug\TextClassification.exe
 C:\Users\mabiscoc\Documents\Visual Studio 2013\Projects\TextClassification\CS440-HW3\TextClassification\bin\Debug\TextClassification.pdb
+I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\obj\Debug\TextClassification.csprojResolveAssemblyReference.cache

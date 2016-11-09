@@ -1,4 +1,6 @@
-﻿"""
+import sys
+
+"""
 ================
 Confusion matrix
 ================
@@ -84,8 +86,10 @@ def plot_confusion_matrix(cm, classes,
     plt.xlabel('Predicted label')
 
 # Compute confusion matrix
-y_test = [1,1,1,1,1,1,-1,-1,1,-1,1,1]
-y_pred = [1,1,-1,1,1,1,-1,-1,1,1,1,-1]
+y_test = map(int, str(sys.argv[1]).split(","))
+y_pred = map(int, str(sys.argv[2]).split(","))
+#y_test = [-1,-1,-1,1,1]
+#y_pred = [-1,-1,1,1,1]
 cnf_matrix = confusion_matrix(y_test, y_pred)
 np.set_printoptions(precision=2)
 

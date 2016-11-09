@@ -7,13 +7,15 @@ using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using Microsoft.Office.Interop.Word;
+//using IronPython.Hosting;
+//using Microsoft.Scripting.Hosting;
 
 namespace TextClassification
 {
     class Program
     {
         static void Main(string[] args)
-        {            
+        {
 
             string trainingSet = "";
             try
@@ -22,7 +24,7 @@ namespace TextClassification
             }
             catch
             {
-                trainingSet = "C:\\Users\\mabiscoc\\Documents\\Visual Studio 2013\\Projects\\TextClassification\\CS440-HW3\\rt-train.txt";
+                trainingSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_train_40topic.txt";
             }
 
             string testSet = "";
@@ -32,8 +34,21 @@ namespace TextClassification
             }
             catch
             {
-                testSet = "C:\\Users\\mabiscoc\\Documents\\Visual Studio 2013\\Projects\\TextClassification\\CS440-HW3\\rt-test.txt";
+                testSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_test_40topic.txt";
             }
+
+            string pythonScript = "";
+            try
+            {
+                pythonScript = args[2];
+            }
+            catch
+            {
+                pythonScript = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\plot_confusion_matrix.py";
+            }
+
+            //doPython();
+            int i;
 
             string model = "";
             int modelToRun = 0;
@@ -72,8 +87,8 @@ namespace TextClassification
                 Console.WriteLine("What smoothing constant do you want to apply? (integer value)");
                 smoothingConstant = Console.ReadLine(); // Read string from console
                 if (int.TryParse(smoothingConstant, out k)) // Try to parse the string as an integer
-                {                    
-                        keepAsking = false;                    
+                {
+                    keepAsking = false;
                 }
                 else
                 {
@@ -81,16 +96,66 @@ namespace TextClassification
                 }
             }
 
-            Model mnb = new Model("MNB", trainingSet, testSet, k);  
-            Model ber = new Model("BER", trainingSet, testSet, k);  
+            string calculateOddsRatio = "";
+            int oRatio = 0;
+            keepAsking = true;
+            while (keepAsking)
+            {
+                Console.WriteLine("Want to calculate Oddds Ratio? (integer value)");
+                Console.WriteLine("1. Yes");
+                Console.WriteLine("2. No");
+                calculateOddsRatio = Console.ReadLine(); // Read string from console
+                if (int.TryParse(calculateOddsRatio, out oRatio)) // Try to parse the string as an integer
+                {
+                    if (oRatio > 2)
+                    {
+                        Console.WriteLine("Please enter value between 1 and 2!");
+                        continue;
+                    }
+                    else
+                    {
+                        keepAsking = false;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Not an integer!");
+                }
+            }
 
-            if (modelToRun == 1 || modelToRun == 3) 
-            { 
+            string createWordCloud = "";
+            int wCloud = 0;
+            keepAsking = true;
+            while (keepAsking)
+            {
+                Console.WriteLine("Want to see a word cloud for the test data? (integer value)");
+                Console.WriteLine("1. Yes");
+                Console.WriteLine("2. No");
+                createWordCloud = Console.ReadLine(); // Read string from console
+                if (int.TryParse(createWordCloud, out wCloud)) // Try to parse the string as an integer
+                {
+                    if (wCloud > 2)
+                    {
+                        Console.WriteLine("Please enter value between 1 and 2!");
+                        continue;
+                    }
+                    else
+                    {
+                        keepAsking = false;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Not an integer!");
+                }
+            }
 
-                
+            Model mnb = new Model("MNB", trainingSet, testSet, k);
+            Model ber = new Model("BER", trainingSet, testSet, k);
 
-                //TextClassification.Program test = new TextClassification.Program();
-                //test.run_cmd("C:\\Users\\mabiscoc\\Documents\\Visual Studio 2013\\Projects\\TextClassification\\TextClassification\\plot_confusion_matrix.py", "");
+            if (modelToRun == 1 || modelToRun == 3)
+            {
+
 
                 DateTime startTrain = DateTime.Now;
                 mnb.Train();
@@ -100,7 +165,7 @@ namespace TextClassification
                 DateTime endTest = DateTime.Now;
                 // Assignment
                 // Document, ACTUAL_PREDICTED
-            
+
                 // Get Confusion Matrix
                 int accuratePrediction = 0;
 
@@ -128,10 +193,10 @@ namespace TextClassification
                 Console.WriteLine(" Testing Started: " + startTest);
                 Console.WriteLine(" Testing Ended: " + endTest);
                 Console.WriteLine(" Testing Duration: " + (endTest - startTest));
-                foreach(KeyValuePair<string, double> kvp in mnb.Prior)
+                foreach (KeyValuePair<string, double> kvp in mnb.Prior)
                 {
                     Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
-                    int i = 1;
+                    i = 1;
                     foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
                     {
                         Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
@@ -143,36 +208,46 @@ namespace TextClassification
                     }
                     //mnb.Likelihood
                 }
+                if (oRatio == 1)
+                {
+                    // Builds Odds Ratio defined by the HW
+                    // odds(Fij=1, c1, c2) = P(Fij=1 | c1) / P(Fij=1 | c2)
+                    Dictionary<string, double> oddsRatio = new Dictionary<string, double>();
+                    foreach (string word in mnb.UniqueWords)
+                    {
+                        // getVal in class
+                        // class = -1, 1
+                        oddsRatio.Add(word, mnb.Likelihood[word + "|-1"] / mnb.Likelihood[word + "|1"]);
+                    }
 
+                    i = 1;
+                    Console.WriteLine("Top 10 Odds Ratio for class (c1 = -1, c2 = 1): ");
+                    foreach (KeyValuePair<string, double> kvp in oddsRatio.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value))
+                    {
+                        Console.WriteLine("   " + i + ". " + kvp.Key + " : " + kvp.Value);
+                        i++;
+                        if (i > 10)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                string actualVal = "";
+                string predictedVal = "";
+                foreach (KeyValuePair<int,string> kvp in mnb.Prediction)
+                {
+                    actualVal = actualVal + "," + kvp.Value.Split('_')[0];
+                    predictedVal = predictedVal + "," + kvp.Value.Split('_')[1];                    
+                }
+
+                TextClassification.Program python = new TextClassification.Program();
+                python.run_cmd(pythonScript, actualVal.Trim(','), predictedVal.Trim(','));
+                
             }
 
             if (modelToRun == 2 || modelToRun == 3)
-            {                           
-
-<<<<<<< HEAD
-                //TextClassification.Program test = new TextClassification.Program();
-                //test.run_cmd("C:\\Users\\mabiscoc\\Documents\\Visual Studio 2013\\Projects\\TextClassification\\TextClassification\\plot_confusion_matrix.py", "");
-=======
-            foreach(KeyValuePair<string, double> kvp in mnb.Prior)
             {
-                Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
-                int i = 1;
-                foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
-                {
-                    Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
-                    i++;
-                    if (i > 10)
-                    {
-                        break;
-                    }
-                }
-                //mnb.Likelihood
-            }
-
-
-            k = 1;
-            Model ber = new Model("BER", trainingSet, testSet, k);  //MNB
->>>>>>> origin/master
 
                 DateTime startTrain = DateTime.Now;
                 ber.Train();
@@ -204,7 +279,7 @@ namespace TextClassification
                 Console.WriteLine("***************Bernoulli Naive Bayes Summary:***************");
                 Console.WriteLine(" Training Data: " + trainingSet);
                 Console.WriteLine(" Test Data: " + testSet);
-                Console.WriteLine(" Smoothing Constant: " + k);            
+                Console.WriteLine(" Smoothing Constant: " + k);
                 Console.WriteLine(" Accuracy: (" + accuratePrediction + "/" + ber.Prediction.Count + ") " + (double)accuratePrediction / ber.Prediction.Count);
                 Console.WriteLine(" Training Started: " + startTrain);
                 Console.WriteLine(" Training Ended: " + endTrain);
@@ -216,7 +291,7 @@ namespace TextClassification
                 foreach (KeyValuePair<string, double> kvp in ber.Prior)
                 {
                     Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
-                    int i = 1;
+                    i = 1;
                     foreach (KeyValuePair<string, double> kvp2 in ber.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
                     {
                         Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
@@ -227,88 +302,94 @@ namespace TextClassification
                         }
                     }
                 }
-            }
-            // Create WordCloud
-            string[] docs = System.IO.File.ReadAllLines(testSet);
-            int docId = 0;
 
-<<<<<<< HEAD
-            string wordCloud = testSet;
-            wordCloud = wordCloud.Substring(0, wordCloud.IndexOf('.')) + ".htm";
-
-            using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter(wordCloud))
-            {
-                file.WriteLine("<html>");
-                file.WriteLine("<head>");
-                file.WriteLine("<title>Word Clouds</title>");
-                file.WriteLine("</head>");
-                file.WriteLine("<body>");
-=======
-            Console.WriteLine("Bernoulli Naive Bayes Accuracy: (" + trueP + "/" + ber.Prediction.Count + ") " + (double)trueP / ber.Prediction.Count);
-
-            foreach (KeyValuePair<string, double> kvp in mnb.Prior)
-            {
-                Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
-                int i = 1;
-                foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
+                if (oRatio == 1)
                 {
-                    Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
-                    i++;
-                    if (i > 10)
+                    // Builds Odds Ratio defined by the HW
+                    // odds(Fij=1, c1, c2) = P(Fij=1 | c1) / P(Fij=1 | c2)
+                    Dictionary<string, double> oddsRatio = new Dictionary<string, double>();
+                    foreach (string word in ber.UniqueWords)
                     {
-                        break;
+                        // getVal in class
+                        // class = -1, 1
+                        oddsRatio.Add(word, ber.Likelihood[word + "|-1"] / ber.Likelihood[word + "|1"]);
                     }
-                }
-                //mnb.Likelihood
-            }
-            do
->>>>>>> origin/master
 
-                if (modelToRun == 1 || modelToRun == 3)
-                {
-                    foreach (KeyValuePair<string, Dictionary<string, int>> kvp in mnb.PredictionData)
+                    i = 1;
+                    Console.WriteLine("Top 10 Odds Ratio for class (c1 = -1, c2 = 1): ");
+                    foreach (KeyValuePair<string, double> kvp in oddsRatio.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value))
                     {
-                        file.WriteLine("<p>*********************Document: " + kvp.Key + "*********************</p>");
-                        foreach (KeyValuePair<string, int> kvp2 in kvp.Value)
+                        Console.WriteLine("   " + i + ". " + kvp.Key + " : " + kvp.Value);
+                        i++;
+                        if (i > 10)
                         {
-                            file.WriteLine("<font size='" + kvp2.Value + "'>" + kvp2.Key + "</font>");
+                            break;
                         }
                     }
                 }
-                if (modelToRun == 2)
+            }
+            if (wCloud == 1)
+            {
+                // Create WordCloud
+                string[] docs = System.IO.File.ReadAllLines(testSet);
+                //int docId = 0;
+
+                string wordCloud = testSet;
+                wordCloud = wordCloud.Substring(0, wordCloud.IndexOf('.')) + ".htm";
+
+                using (System.IO.StreamWriter file =
+                new System.IO.StreamWriter(wordCloud))
                 {
-                    foreach (KeyValuePair<string, Dictionary<string, int>> kvp in ber.PredictionData)
+                    file.WriteLine("<html>");
+                    file.WriteLine("<head>");
+                    file.WriteLine("<title>Word Clouds</title>");
+                    file.WriteLine("</head>");
+                    file.WriteLine("<body>");
+
+                    if (modelToRun == 1 || modelToRun == 3)
                     {
-                        file.WriteLine("<p>*********************Document: " + kvp.Key + "*********************</p>");
-                        foreach (KeyValuePair<string, int> kvp2 in kvp.Value)
+                        foreach (KeyValuePair<string, Dictionary<string, int>> kvp in mnb.PredictionData.OrderBy(l =>l.Key))
                         {
-                            file.WriteLine("<font size='" + kvp2.Value + "'>" + kvp2.Key + "</font>");
+                            file.WriteLine("<p>*********************Document: " + kvp.Key + "*********************</p>");
+                            foreach (KeyValuePair<string, int> kvp2 in kvp.Value)
+                            {
+                                file.WriteLine("<font size='" + kvp2.Value + "'>" + kvp2.Key + "</font>");
+                            }
                         }
                     }
+                    if (modelToRun == 2)
+                    {
+                        foreach (KeyValuePair<string, Dictionary<string, int>> kvp in ber.PredictionData.OrderBy(l => l.Key))
+                        {
+                            file.WriteLine("<p>*********************Document: " + kvp.Key + "*********************</p>");
+                            foreach (KeyValuePair<string, int> kvp2 in kvp.Value)
+                            {
+                                file.WriteLine("<font size='" + kvp2.Value + "'>" + kvp2.Key + "</font>");
+                            }
+                        }
+                    }
+
+                    //foreach (string doc in docs)
+                    //{
+                    //    file.WriteLine("<p>*********************Document: " + docId + "*********************</p>");
+                    //    // If the line doesn't contain the word 'Second', write the line to the file.
+                    //    string words = doc.Substring(doc.IndexOf(' ') + 1);
+
+                    //    foreach (string word in words.Split(' ').ToList())
+                    //    {
+                    //        string wd = word.Split(':')[0];
+                    //        int frequency = Int32.Parse(word.Split(':')[1]);
+                    //        file.WriteLine("<font size='"+ frequency + "'>" + wd + "</font>");                        
+                    //    }
+                    //    docId++;
+                    //}
+                    file.WriteLine("</body>");
+                    file.WriteLine("</html>");
                 }
 
-                //foreach (string doc in docs)
-                //{
-                //    file.WriteLine("<p>*********************Document: " + docId + "*********************</p>");
-                //    // If the line doesn't contain the word 'Second', write the line to the file.
-                //    string words = doc.Substring(doc.IndexOf(' ') + 1);
-               
-                //    foreach (string word in words.Split(' ').ToList())
-                //    {
-                //        string wd = word.Split(':')[0];
-                //        int frequency = Int32.Parse(word.Split(':')[1]);
-                //        file.WriteLine("<font size='"+ frequency + "'>" + wd + "</font>");                        
-                //    }
-                //    docId++;
-                //}
-                file.WriteLine("</body>");
-                file.WriteLine("</html>");
+                Console.WriteLine(" Word Cloud created on test data: " + wordCloud);
+                System.Diagnostics.Process.Start(wordCloud);
             }
-
-            Console.WriteLine(" Word Cloud created on test data: " + wordCloud);
-            System.Diagnostics.Process.Start(wordCloud);
-
             do
             {
                 Console.WriteLine("Press q to quit");
@@ -316,11 +397,20 @@ namespace TextClassification
 
         }
 
-        private void run_cmd(string cmd, string args)
+        //private static void doPython()
+        //{
+        //    ScriptEngine engine = Python.CreateEngine();
+        //    var paths = engine.GetSearchPaths();
+        //    paths.Add(@"C:\Python27\Lib\site-packages");
+        //    engine.SetSearchPaths(paths);
+        //    engine.ExecuteFile(@"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\plot_confusion_matrix.py");
+        //}
+
+        private void run_cmd(string cmd, string arg1, string arg2)
         {
             ProcessStartInfo start = new ProcessStartInfo();
             start.FileName = "c:\\python27\\python.exe";
-            start.Arguments = string.Format("{0} {1}", cmd, args);
+            start.Arguments = string.Format("{0} {1} {2}", cmd, arg1, arg2);
             start.UseShellExecute = false;
             start.RedirectStandardOutput = true;
             using (Process process = Process.Start(start))
@@ -333,6 +423,6 @@ namespace TextClassification
             }
         }
 
-      
+
     }
 }
