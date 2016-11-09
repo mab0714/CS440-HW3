@@ -96,12 +96,39 @@ namespace TextClassification
                 }
             }
 
+            string calculateTopLikelihood = "";
+            int tLikelihood = 0;
+            keepAsking = true;
+            while (keepAsking)
+            {
+                Console.WriteLine("Want to calculate Top Likelihoods? (integer value)");
+                Console.WriteLine("1. Yes");
+                Console.WriteLine("2. No");
+                calculateTopLikelihood = Console.ReadLine(); // Read string from console
+                if (int.TryParse(calculateTopLikelihood, out tLikelihood)) // Try to parse the string as an integer
+                {
+                    if (tLikelihood > 2)
+                    {
+                        Console.WriteLine("Please enter value between 1 and 2!");
+                        continue;
+                    }
+                    else
+                    {
+                        keepAsking = false;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Not an integer!");
+                }
+            }
+
             string calculateOddsRatio = "";
             int oRatio = 0;
             keepAsking = true;
             while (keepAsking)
             {
-                Console.WriteLine("Want to calculate Oddds Ratio? (integer value)");
+                Console.WriteLine("Want to calculate Odds Ratio? (integer value)");
                 Console.WriteLine("1. Yes");
                 Console.WriteLine("2. No");
                 calculateOddsRatio = Console.ReadLine(); // Read string from console
@@ -193,20 +220,24 @@ namespace TextClassification
                 Console.WriteLine(" Testing Started: " + startTest);
                 Console.WriteLine(" Testing Ended: " + endTest);
                 Console.WriteLine(" Testing Duration: " + (endTest - startTest));
-                foreach (KeyValuePair<string, double> kvp in mnb.Prior)
+
+                if (tLikelihood == 1)
                 {
-                    Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
-                    i = 1;
-                    foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
+                    foreach (KeyValuePair<string, double> kvp in mnb.Prior)
                     {
-                        Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
-                        i++;
-                        if (i > 10)
+                        Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
+                        i = 1;
+                        foreach (KeyValuePair<string, double> kvp2 in mnb.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
                         {
-                            break;
+                            Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
+                            i++;
+                            if (i > 10)
+                            {
+                                break;
+                            }
                         }
+                        //mnb.Likelihood
                     }
-                    //mnb.Likelihood
                 }
                 if (oRatio == 1)
                 {
@@ -235,15 +266,21 @@ namespace TextClassification
 
                 string actualVal = "";
                 string predictedVal = "";
-                foreach (KeyValuePair<int,string> kvp in mnb.Prediction)
+                string cls = "";
+                foreach (KeyValuePair<string, Dictionary<string, int>> kvp in mnb.TrainingData.OrderBy(x => x.Key))
+                {
+                    cls = cls + "," + kvp.Key;
+                }
+                foreach (KeyValuePair<int, string> kvp in mnb.Prediction)
                 {
                     actualVal = actualVal + "," + kvp.Value.Split('_')[0];
-                    predictedVal = predictedVal + "," + kvp.Value.Split('_')[1];                    
+                    predictedVal = predictedVal + "," + kvp.Value.Split('_')[1];
                 }
 
                 TextClassification.Program python = new TextClassification.Program();
-                python.run_cmd(pythonScript, actualVal.Trim(','), predictedVal.Trim(','));
-                
+                python.run_cmd(pythonScript, actualVal.Trim(','), predictedVal.Trim(','), cls.Trim(','));
+
+
             }
 
             if (modelToRun == 2 || modelToRun == 3)
@@ -288,17 +325,20 @@ namespace TextClassification
                 Console.WriteLine(" Testing Ended: " + endTest);
                 Console.WriteLine(" Testing Duration: " + (endTest - startTest));
 
-                foreach (KeyValuePair<string, double> kvp in ber.Prior)
+                if (tLikelihood == 1)
                 {
-                    Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
-                    i = 1;
-                    foreach (KeyValuePair<string, double> kvp2 in ber.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
+                    foreach (KeyValuePair<string, double> kvp in ber.Prior)
                     {
-                        Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
-                        i++;
-                        if (i > 10)
+                        Console.WriteLine("Top 10 Likelihoods for class: " + kvp.Key);
+                        i = 1;
+                        foreach (KeyValuePair<string, double> kvp2 in ber.Likelihood.OrderByDescending(v => v.Value).Where(y => y.Key.Split('|')[1] == kvp.Key).ToDictionary(x => x.Key, x => x.Value))
                         {
-                            break;
+                            Console.WriteLine("   " + i + ". " + kvp2.Key.Split('|')[0] + " : " + kvp2.Value);
+                            i++;
+                            if (i > 10)
+                            {
+                                break;
+                            }
                         }
                     }
                 }
@@ -327,6 +367,24 @@ namespace TextClassification
                         }
                     }
                 }
+
+                string actualVal = "";
+                string predictedVal = "";
+                string cls = "";
+                foreach (KeyValuePair<string, Dictionary<string, int>> kvp in ber.TrainingData.OrderBy(x => x.Key))
+                {
+                    cls = cls + "," + kvp.Key;
+                }
+                foreach (KeyValuePair<int, string> kvp in ber.Prediction)
+                {
+                    actualVal = actualVal + "," + kvp.Value.Split('_')[0];
+                    predictedVal = predictedVal + "," + kvp.Value.Split('_')[1];
+                }
+
+                TextClassification.Program python = new TextClassification.Program();
+                python.run_cmd(pythonScript, actualVal.Trim(','), predictedVal.Trim(','), cls.Trim(','));
+
+
             }
             if (wCloud == 1)
             {
@@ -406,11 +464,11 @@ namespace TextClassification
         //    engine.ExecuteFile(@"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\plot_confusion_matrix.py");
         //}
 
-        private void run_cmd(string cmd, string arg1, string arg2)
+        private void run_cmd(string cmd, string arg1, string arg2, string arg3)
         {
             ProcessStartInfo start = new ProcessStartInfo();
             start.FileName = "c:\\python27\\python.exe";
-            start.Arguments = string.Format("{0} {1} {2}", cmd, arg1, arg2);
+            start.Arguments = string.Format("{0} {1} {2} {3}", cmd, arg1, arg2, arg3);
             start.UseShellExecute = false;
             start.RedirectStandardOutput = true;
             using (Process process = Process.Start(start))

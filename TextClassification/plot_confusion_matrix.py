@@ -41,7 +41,7 @@ from sklearn.metrics import confusion_matrix
 #X = iris.data
 #y = iris.target
 #class_names = iris.target_names
-class_names = [-1,1]
+class_names = map(int, str(sys.argv[3]).split(","))
 #
 ## Split the data into a training set and a test set
 #X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
@@ -88,8 +88,8 @@ def plot_confusion_matrix(cm, classes,
 # Compute confusion matrix
 y_test = map(int, str(sys.argv[1]).split(","))
 y_pred = map(int, str(sys.argv[2]).split(","))
-#y_test = [-1,-1,-1,1,1]
-#y_pred = [-1,-1,1,1,1]
+#y_test = [2,-1,-1,1,1]
+#y_pred = [2,-1,1,1,1]
 cnf_matrix = confusion_matrix(y_test, y_pred)
 np.set_printoptions(precision=2)
 
