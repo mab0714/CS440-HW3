@@ -17,6 +17,8 @@ namespace TextClassification
         private string _trainingSetFile;
         private string _testSetFile;
         private Dictionary<string, Dictionary<string, int>> _trainingData = new Dictionary<string, Dictionary<string, int>>();
+        private Dictionary<string, int> _trainingData2 = new Dictionary<string, int>();
+
         private Dictionary<string, Dictionary<string, int>> _predictionData = new Dictionary<string, Dictionary<string, int>>();
 
         private Dictionary<string, double> _likelihood = new Dictionary<string, double>();
@@ -24,6 +26,9 @@ namespace TextClassification
         private Dictionary<string, int> _classCounts = new Dictionary<string, int>();
         private Dictionary<int, string> _prediction = new Dictionary<int, string>();
         private List<string> _uniqueWords = new List<string>();
+        private int _gWords;
+        private double _percentMatch;
+        private Dictionary<string, List<string>> _matchingWords = new Dictionary<string, List<string>>();
 
         public Model(string type, string trainingSetFile, string testSetFile, int smoothingConstant)
         {
@@ -87,6 +92,18 @@ namespace TextClassification
             set { this._uniqueWords = value; }
         }
 
+        public int GroupWords
+        {
+            get { return this._gWords; }
+            set { this._gWords = value; }
+        }
+
+        public double PercentMatch
+        {
+            get { return this._percentMatch; }
+            set { this._percentMatch = value; }
+        }
+
         public void Train()
         {
             string[] docs = System.IO.File.ReadAllLines(_trainingSetFile);
@@ -103,6 +120,8 @@ namespace TextClassification
 
                 // Dictionary of Word Frequencies per Class
                 Dictionary<string, int> dictWordCount = new Dictionary<string, int>();
+                // Dictionary of Doc Frequencies of a Word per Class
+                Dictionary<string, int> dictDocCount = new Dictionary<string, int>();
 
                 // Maintain how many documents per class
                 int classCnt = 0;
@@ -131,14 +150,82 @@ namespace TextClassification
                     _trainingData.TryGetValue(cls, out dictWordCount);
                 }
 
+                Dictionary<string, double> matches = new Dictionary<string, double>();
+
+
                 foreach (string word in words.Split(' ').ToList())
                 {
                     // foreach word in the document, get the frequencies after the ':'                         
                     string wd = word.Split(':')[0];
                     int wordCnt = Int32.Parse(word.Split(':')[1]);
+                    int docCnt = 0;
+                    List<string> groupOfWords = new List<string>();
+                    if (_trainingData2.ContainsKey(wd + "|" + cls))
+                    {
+                        _trainingData2.TryGetValue(wd + "|" + cls, out docCnt);
+                        docCnt++;
+                        _trainingData2.Remove(wd + "|" + cls);
+                        _trainingData2.Add(wd + "|" + cls, docCnt);
+                        //_trainingData2[cls] = _trainingData2[cls].Add(wd);
+                    }
+                    else
+                    {
+                        _trainingData2.Add(wd + "|" + cls, 1);
+                    }
+
 
                     // if the word exists in the dictionary already, get the existing count
                     // and add the occurences from this new document.  otherwise add the word to the dictionary
+
+                    if (this.GroupWords == 1)
+                    {
+                        // or if word similar to one that exists
+                        Dictionary<string, int> sortedDictCount = dictWordCount.Where(y => y.Key.Substring(0, Math.Min(y.Key.Length, wd.Length) - 1) == wd.Substring(0, Math.Min(y.Key.Length, wd.Length) - 1)).OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
+                        foreach (KeyValuePair<string, int> kvp in sortedDictCount)
+                        {
+                            if (CalculateSimilarity(wd, kvp.Key) > this.PercentMatch)
+                            {
+                                if (!matches.ContainsKey(kvp.Key))
+                                {
+                                    matches.Add(kvp.Key, CalculateSimilarity(wd, kvp.Key));
+                                    try
+                                    {
+                                        if (_matchingWords.ContainsKey(wd))
+                                        {
+                                            _matchingWords.TryGetValue(wd, out groupOfWords);
+                                            groupOfWords.Add(kvp.Key);
+                                            _matchingWords.Remove(wd);
+                                            _matchingWords.Add(wd, groupOfWords.Distinct().ToList());
+                                        }
+                                        else
+                                        {
+                                            groupOfWords.Add(kvp.Key);
+                                            _matchingWords.Add(wd, groupOfWords);
+                                        }
+
+                                    }
+                                    catch
+                                    {
+
+                                    }
+                                    if (CalculateSimilarity(wd, kvp.Key) == 1.0)
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        try
+                        {
+                            wd = matches.OrderByDescending(v => v.Value).First().Key;
+                            matches.Clear();
+                        }
+                        catch
+                        {
+                            ;
+                        }
+                    }
                     if (dictWordCount.ContainsKey(wd))
                     {
                         int newCnt = dictWordCount[wd] + wordCnt;
@@ -149,6 +236,7 @@ namespace TextClassification
                     {
                         dictWordCount.Add(wd, wordCnt);
                     }
+
 
                 }
 
@@ -195,42 +283,15 @@ namespace TextClassification
                         // Need to loop all words, not just words per class
                         // need to account for words that aren't in the class for this class and give it the smoothing constant
 
-                        //foreach (KeyValuePair<string, int> kvp2 in kvp.Value)
-                        //{
-
                         int wordOccurrenceInClass = getOccurencesOfWordInClass(kvp.Key, word);
                         int totalWordsInDocsFromClass = getUniqueWordsInClass(kvp.Key);
 
                         _likelihood.Add(word + "|" + kvp.Key, (double)(wordOccurrenceInClass + _smoothingConstant) / (totalWordsInDocsFromClass + uniqueWords));
 
-                        //}
                     }
 
 
                 }
-
-
-                //// Loop each class
-                //foreach (KeyValuePair<string, Dictionary<string, int>> kvp in _trainingData)
-                //{
-                //    // kvp.Key = -1
-                //    // kvp.Value = { 
-                //    //              kvp2.Key = word1
-                //    //              kvp2.Value = 4
-                //    //             }
-                //    // Loop each word in the class
-
-                //    // Need to loop all words, not just words per class
-                //    // need to account for words that aren't in the class for this class and give it the smoothing constant
-
-                //    foreach (KeyValuePair<string, int> kvp2 in kvp.Value) {
-                //        int wordOccurrenceInClass = getOccurencesOfWordInClass(kvp.Key, kvp2.Key);
-                //        int totalWordsInDocsFromClass = getUniqueWordsInClass(kvp.Key);
-
-                //        _likelihood.Add(kvp2.Key + "|" + kvp.Key, (double)(wordOccurrenceInClass + _smoothingConstant) / (totalWordsInDocsFromClass + uniqueWords));
-
-                //    }
-                //}
 
             }
             else
@@ -287,6 +348,8 @@ namespace TextClassification
                     _predictionData.TryGetValue(cls, out dictWordCount);
                 }
 
+                Dictionary<string, double> matches = new Dictionary<string, double>();
+
                 foreach (string word in words.Split(' ').ToList())
                 {
                     // foreach word in the document, get the frequencies after the ':'                         
@@ -295,6 +358,44 @@ namespace TextClassification
 
                     // if the word exists in the dictionary already, get the existing count
                     // and add the occurences from this new document.  otherwise add the word to the dictionary
+
+                    if (this.GroupWords == 1)
+                    {
+                        foreach (KeyValuePair<string, List<string>> kvp in _matchingWords.Where(y => y.Key.Substring(0, Math.Min(y.Key.Length, wd.Length) - 1) == wd.Substring(0, Math.Min(y.Key.Length, wd.Length) - 1)))
+                        {
+                            if (kvp.Value.Contains(wd))
+                            {
+                                wd = kvp.Key;
+                                break;
+                            }
+                        }
+                        // or if word similar to one that exists
+                        //Dictionary<string, int> sortedDictCount = dictWordCount.Where(y => y.Key.Substring(0, 2) == wd.Substring(0, 2)).OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
+                        //foreach (KeyValuePair<string, int> kvp in sortedDictCount)
+                        //{
+                        //    if (CalculateSimilarity(wd, kvp.Key) > this.PercentMatch)
+                        //    {
+                        //        if (!matches.ContainsKey(kvp.Key))
+                        //        {
+                        //            matches.Add(kvp.Key, CalculateSimilarity(wd, kvp.Key));
+                        //            if (CalculateSimilarity(wd, kvp.Key) == 1.0)
+                        //            {
+                        //                break;
+                        //            }
+                        //        }
+                        //    }
+                        //}
+
+                        //try
+                        //{
+                        //    wd = matches.OrderByDescending(v => v.Value).First().Key;
+                        //    matches.Clear();
+                        //}
+                        //catch
+                        //{
+                        //    ;
+                        //}
+                    }
                     if (dictWordCount.ContainsKey(wd))
                     {
                         int newCnt = dictWordCount[wd] + wordCnt;
@@ -350,7 +451,7 @@ namespace TextClassification
                                 //posterior = posterior * _likelihood[wd + "|" + kvp.Key];    
 
                                 // to prevent underflow, use log
-                                likelihood = likelihood + Math.Log10(_likelihood[wd + "|" + kvp.Key])*frequency;
+                                likelihood = likelihood + Math.Log10(_likelihood[wd + "|" + kvp.Key]);
                             }
                             catch
                             {
@@ -434,18 +535,26 @@ namespace TextClassification
         private int getDocsContainingWord(string word, string[] docs, string targetCls)
         {
             int occurances = 0;
-            foreach (string doc in docs)
+            try
             {
-                string cls = doc.Split(' ')[0];
-                string words = doc.Substring(doc.IndexOf(' ') + 1);
-                if (targetCls.Equals(cls))
-                {
-                    if (doc.Contains(word))
-                    {
-                        occurances++;
-                    }
-                }
+                occurances = _trainingData2[word + "|" + targetCls];
             }
+            catch
+            {
+                occurances = 0;
+            }
+            //foreach (string doc in docs)
+            //{
+            //    string cls = doc.Split(' ')[0];
+            //    string words = doc.Substring(doc.IndexOf(' ') + 1);
+            //    if (targetCls.Equals(cls))
+            //    {
+            //        if (doc.Contains(word))
+            //        {
+            //            occurances++;
+            //        }
+            //    }
+            //}
             return occurances;
         }
         private int getUniqueWordsInClass(string cls)

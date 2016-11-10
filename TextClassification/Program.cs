@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
 using System.Diagnostics;
-using Microsoft.Office.Interop.Word;
+//using Microsoft.Office.Interop.Word;
 //using IronPython.Hosting;
 //using Microsoft.Scripting.Hosting;
 
@@ -150,6 +150,58 @@ namespace TextClassification
                 }
             }
 
+            string groupWords = "";
+            int gWords = 0;
+            double percentMatch = 0.0;
+            string percentMatchStr = "";
+            keepAsking = true;
+            while (keepAsking)
+            {
+                Console.WriteLine("Want to group similar words? (integer value)");
+                Console.WriteLine("1. Yes");
+                Console.WriteLine("2. No");
+                groupWords = Console.ReadLine(); // Read string from console
+                if (int.TryParse(groupWords, out gWords)) // Try to parse the string as an integer
+                {
+                    if (gWords > 2)
+                    {
+                        Console.WriteLine("Please enter value between 1 and 2!");
+                        continue;
+                    }
+                    else
+                    {
+                        if (gWords == 1)
+                        {
+                            Console.WriteLine("Want percentage should they match? (double value, 0.0 - 1.0)");
+                            percentMatchStr = Console.ReadLine();
+                            if (double.TryParse(percentMatchStr, out percentMatch)) // Try to parse the string as an integer
+                            {
+                                if (percentMatch > 1.0)
+                                {
+                                    Console.WriteLine("Please enter value between 0.0 and 1.0!");
+                                    continue;
+                                }
+                                else
+                                {
+                                    keepAsking = false;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Not an double!");
+                            }
+
+
+                        }
+                        keepAsking = false;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Not an integer!");
+                }
+            }
+
             string createWordCloud = "";
             int wCloud = 0;
             keepAsking = true;
@@ -178,8 +230,11 @@ namespace TextClassification
             }
 
             Model mnb = new Model("MNB", trainingSet, testSet, k);
+            mnb.GroupWords = gWords;
+            mnb.PercentMatch = percentMatch;
             Model ber = new Model("BER", trainingSet, testSet, k);
-
+            ber.GroupWords = gWords;
+            ber.PercentMatch = percentMatch;
             if (modelToRun == 1 || modelToRun == 3)
             {
 
@@ -267,7 +322,13 @@ namespace TextClassification
                 string actualVal = "";
                 string predictedVal = "";
                 string cls = "";
+                Dictionary<int, Dictionary<string, int>> newTrainingData = new Dictionary<int, Dictionary<string, int>>();
                 foreach (KeyValuePair<string, Dictionary<string, int>> kvp in mnb.TrainingData.OrderBy(x => x.Key))
+                {
+                    newTrainingData.Add(Int32.Parse(kvp.Key), kvp.Value);
+                }
+
+                foreach (KeyValuePair<int, Dictionary<string, int>> kvp in newTrainingData.OrderBy(x => x.Key))
                 {
                     cls = cls + "," + kvp.Key;
                 }
@@ -371,7 +432,13 @@ namespace TextClassification
                 string actualVal = "";
                 string predictedVal = "";
                 string cls = "";
+                Dictionary<int, Dictionary<string, int>> newTrainingData = new Dictionary<int, Dictionary<string, int>>();
                 foreach (KeyValuePair<string, Dictionary<string, int>> kvp in ber.TrainingData.OrderBy(x => x.Key))
+                {
+                    newTrainingData.Add(Int32.Parse(kvp.Key), kvp.Value);
+                }
+
+                foreach (KeyValuePair<int, Dictionary<string, int>> kvp in newTrainingData.OrderBy(x => x.Key))
                 {
                     cls = cls + "," + kvp.Key;
                 }
