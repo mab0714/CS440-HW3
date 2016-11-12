@@ -24,8 +24,6 @@ namespace TextClassification
         private Dictionary<string, double> _likelihood = new Dictionary<string, double>();
         private Dictionary<string, double> _prior = new Dictionary<string, double>();
         private Dictionary<string, int> _classCounts = new Dictionary<string, int>();
-        private Dictionary<string, int> _wordCountsByClass = new Dictionary<string, int>();
-
         private Dictionary<int, string> _prediction = new Dictionary<int, string>();
         private List<string> _uniqueWords = new List<string>();
         private int _gWords;
@@ -122,6 +120,8 @@ namespace TextClassification
 
                 // Dictionary of Word Frequencies per Class
                 Dictionary<string, int> dictWordCount = new Dictionary<string, int>();
+                // Dictionary of Doc Frequencies of a Word per Class
+                Dictionary<string, int> dictDocCount = new Dictionary<string, int>();
 
                 // Maintain how many documents per class
                 int classCnt = 0;
@@ -159,7 +159,6 @@ namespace TextClassification
                     string wd = word.Split(':')[0];
                     int wordCnt = Int32.Parse(word.Split(':')[1]);
                     int docCnt = 0;
-                    int wordCntByClass = 0;
                     List<string> groupOfWords = new List<string>();
                     if (_trainingData2.ContainsKey(wd + "|" + cls))
                     {
@@ -172,18 +171,6 @@ namespace TextClassification
                     else
                     {
                         _trainingData2.Add(wd + "|" + cls, 1);
-                    }
-
-                    if (_wordCountsByClass.ContainsKey(cls))
-                    {
-                        _wordCountsByClass.TryGetValue(cls, out wordCntByClass);
-                        wordCntByClass = wordCntByClass + wordCnt;
-                        _wordCountsByClass.Remove(cls);
-                        _wordCountsByClass.Add(cls, wordCntByClass);
-                    }
-                    else
-                    {
-                        _wordCountsByClass.Add(cls, wordCnt);
                     }
 
 
@@ -257,7 +244,7 @@ namespace TextClassification
                 {
                     //_trainingData.TryGetValue(cls, out dictWordCount);
 
-                    // class dictionary has been updated, remove the class and read it with the updated dictionary
+                    // class dictionary has been updated, remove the class and readd it with the updated dictionary
                     _trainingData.Remove(cls);
                     _trainingData.Add(cls, dictWordCount);
 
@@ -297,8 +284,7 @@ namespace TextClassification
                         // need to account for words that aren't in the class for this class and give it the smoothing constant
 
                         int wordOccurrenceInClass = getOccurencesOfWordInClass(kvp.Key, word);
-                        //int totalWordsInDocsFromClass = getUniqueWordsInClass(kvp.Key);
-                        int totalWordsInDocsFromClass = getTotalWordsInDocsFromClass(kvp.Key);
+                        int totalWordsInDocsFromClass = getUniqueWordsInClass(kvp.Key);
 
                         _likelihood.Add(word + "|" + kvp.Key, (double)(wordOccurrenceInClass + _smoothingConstant) / (totalWordsInDocsFromClass + uniqueWords));
 
@@ -576,10 +562,6 @@ namespace TextClassification
             return this._trainingData[cls].Count();
         }
 
-        private int getTotalWordsInDocsFromClass(string cls)
-        {
-            return this._wordCountsByClass[cls];
-        }
         private int getOccurencesOfWordInClass(string cls, string word)
         {
             try
