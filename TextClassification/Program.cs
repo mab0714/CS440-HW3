@@ -24,7 +24,7 @@ namespace TextClassification
             }
             catch
             {
-                trainingSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_train_40topic.txt";
+                trainingSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_train_2topic.txt";
             }
 
             string testSet = "";
@@ -34,7 +34,7 @@ namespace TextClassification
             }
             catch
             {
-                testSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_test_40topic.txt";
+                testSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_test_2topic.txt";
             }
 
             string pythonScript = "";
@@ -45,6 +45,16 @@ namespace TextClassification
             catch
             {
                 pythonScript = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\plot_confusion_matrix.py";
+            }
+
+            string pythonPath = "";
+            try
+            {
+                pythonPath = args[3];
+            }
+            catch
+            {
+                pythonPath = @"c:\\python27\\python.exe";
             }
 
             //doPython();
@@ -339,7 +349,7 @@ namespace TextClassification
                 }
 
                 TextClassification.Program python = new TextClassification.Program();
-                python.run_cmd(pythonScript, actualVal.Trim(','), predictedVal.Trim(','), cls.Trim(','));
+                python.run_cmd(pythonPath, pythonScript, actualVal.Trim(','), predictedVal.Trim(','), cls.Trim(','));
 
 
             }
@@ -449,7 +459,7 @@ namespace TextClassification
                 }
 
                 TextClassification.Program python = new TextClassification.Program();
-                python.run_cmd(pythonScript, actualVal.Trim(','), predictedVal.Trim(','), cls.Trim(','));
+                python.run_cmd(pythonPath, pythonScript, actualVal.Trim(','), predictedVal.Trim(','), cls.Trim(','));
 
 
             }
@@ -531,10 +541,10 @@ namespace TextClassification
         //    engine.ExecuteFile(@"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\TextClassification\plot_confusion_matrix.py");
         //}
 
-        private void run_cmd(string cmd, string arg1, string arg2, string arg3)
+        private void run_cmd(string path, string cmd, string arg1, string arg2, string arg3)
         {
             ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = "c:\\python27\\python.exe";
+            start.FileName = path;
             start.Arguments = string.Format("{0} {1} {2} {3}", cmd, arg1, arg2, arg3);
             start.UseShellExecute = false;
             start.RedirectStandardOutput = true;

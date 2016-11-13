@@ -310,7 +310,7 @@ namespace TextClassification
             }
             else
             {
-                //// Bernoulli Naive Bayes;
+                // Bernoulli Naive Bayes;
 
                 // Calculate Likelihoods for each word in each class
                 // Loop each class 
@@ -495,6 +495,7 @@ namespace TextClassification
                 {
                     string actualClass = doc.Split(' ')[0];
                     string words = doc.Substring(doc.IndexOf(' ') + 1);
+                    List<string> docWords = new List<string>();
 
                     // Loop each class
                     foreach (KeyValuePair<string, Dictionary<string, int>> kvp in _trainingData)
@@ -502,33 +503,52 @@ namespace TextClassification
                         double posterior = 0.0; // 1.0;
                         double likelihood = 0.0;
 
-                        // Loop each word
-                        foreach (string word in words.Split(' ').ToList())
+                        foreach (string uWord in this._uniqueWords)
                         {
-                            string wd = word.Split(':')[0];
-                            int frequency = Int32.Parse(word.Split(':')[1]);
-
-                            // Calculate product of all likelihoods for the given class...word|class ex: brad|-1
-                            try
+                            foreach (string word in words.Split(' ').ToList())
                             {
-                                //posterior = posterior * _likelihood[wd + "|" + kvp.Key];    
-
-                                // to prevent underflow, use log
-                                if (this._uniqueWords.Contains(wd))
-                                {
-                                    likelihood = likelihood + Math.Log10(_likelihood[wd + "|" + kvp.Key]);
-                                }
-                                else
-                                {
-                                    likelihood = likelihood + Math.Log10(1 - _likelihood[wd + "|" + kvp.Key]);
-                                }
+                                string wd = word.Split(':')[0];
+                                docWords.Add(wd);
                             }
-                            catch
+                            if (docWords.Contains(uWord))
                             {
-                                // ignore words that don't appear in the dictionary
-                                ;
+                                likelihood = likelihood + Math.Log10(_likelihood[uWord + "|" + kvp.Key]);
                             }
+                            else
+                            {
+                                likelihood = likelihood + Math.Log10(1 - _likelihood[uWord + "|" + kvp.Key]);
+                            }
+                            docWords.Clear();
                         }
+
+
+                        //// Loop each word
+                        //foreach (string word in words.Split(' ').ToList())
+                        //{
+                        //    string wd = word.Split(':')[0];
+                        //    int frequency = Int32.Parse(word.Split(':')[1]);
+
+                        //    // Calculate product of all likelihoods for the given class...word|class ex: brad|-1
+                        //    try
+                        //    {
+                        //        //posterior = posterior * _likelihood[wd + "|" + kvp.Key];    
+
+                        //        // to prevent underflow, use log
+                        //        if (this._uniqueWords.Contains(wd))
+                        //        {
+                        //            likelihood = likelihood + Math.Log10(_likelihood[wd + "|" + kvp.Key]);
+                        //        }
+                        //        else
+                        //        {
+                        //            likelihood = likelihood + Math.Log10(1 - _likelihood[wd + "|" + kvp.Key]);
+                        //        }
+                        //    }
+                        //    catch
+                        //    {
+                        //        // ignore words that don't appear in the dictionary
+                        //        ;
+                        //    }
+                        //}
                         // multiply by prior of the class
                         //posterior = posterior * _prior[kvp.Key];
                         posterior = Math.Log10(_prior[kvp.Key]) + likelihood;
