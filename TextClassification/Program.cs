@@ -24,7 +24,7 @@ namespace TextClassification
             }
             catch
             {
-                trainingSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_train_2topic.txt";
+                trainingSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_train_40topic.txt";
             }
 
             string testSet = "";
@@ -34,7 +34,7 @@ namespace TextClassification
             }
             catch
             {
-                testSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_test_2topic.txt";
+                testSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_test_40topic.txt";
             }
 
             string pythonScript = "";
@@ -90,13 +90,13 @@ namespace TextClassification
             }
 
             string smoothingConstant = "";
-            int k = 0;
+            double k = 0;
             keepAsking = true;
             while (keepAsking)
             {
                 Console.WriteLine("What smoothing constant do you want to apply? (integer value)");
                 smoothingConstant = Console.ReadLine(); // Read string from console
-                if (int.TryParse(smoothingConstant, out k)) // Try to parse the string as an integer
+                if (double.TryParse(smoothingConstant, out k)) // Try to parse the string as an integer
                 {
                     keepAsking = false;
                 }

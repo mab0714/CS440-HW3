@@ -13,7 +13,7 @@ namespace TextClassification
         private string _type;
         private int _trainingSize;
         private int _testSize;
-        private int _smoothingConstant;
+        private double _smoothingConstant;
         private string _trainingSetFile;
         private string _testSetFile;
         private Dictionary<string, Dictionary<string, int>> _trainingData = new Dictionary<string, Dictionary<string, int>>();
@@ -32,7 +32,7 @@ namespace TextClassification
         private double _percentMatch;
         private Dictionary<string, List<string>> _matchingWords = new Dictionary<string, List<string>>();
 
-        public Model(string type, string trainingSetFile, string testSetFile, int smoothingConstant)
+        public Model(string type, string trainingSetFile, string testSetFile, double smoothingConstant)
         {
             this._type = type;
             this._trainingSetFile = trainingSetFile;
