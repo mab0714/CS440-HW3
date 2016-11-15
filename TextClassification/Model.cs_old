@@ -31,8 +31,6 @@ namespace TextClassification
         private int _gWords;
         private double _percentMatch;
         private Dictionary<string, List<string>> _matchingWords = new Dictionary<string, List<string>>();
-        private int _feature;
-        private double _topPercent = 1.0;
 
         public Model(string type, string trainingSetFile, string testSetFile, double smoothingConstant)
         {
@@ -106,18 +104,6 @@ namespace TextClassification
         {
             get { return this._percentMatch; }
             set { this._percentMatch = value; }
-        }
-
-        public int FeatureSelection
-        {
-            get { return this._feature; }
-            set { this._feature = value; }
-        }
-
-        public double TopPercent
-        {
-            get { return this._topPercent; }
-            set { this._topPercent = value; }
         }
 
         public void Train()
@@ -503,9 +489,6 @@ namespace TextClassification
             }
             else
             {
-                // Top likelihoods
-                Dictionary<string, double> sortedLikelihoods = this._likelihood.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value);
-
                 // Calculate Posterior Probabilities
                 // Loop each document
                 foreach (string doc in docs)
@@ -514,63 +497,30 @@ namespace TextClassification
                     string words = doc.Substring(doc.IndexOf(' ') + 1);
                     List<string> docWords = new List<string>();
 
-
                     // Loop each class
                     foreach (KeyValuePair<string, Dictionary<string, int>> kvp in _trainingData)
                     {
                         double posterior = 0.0; // 1.0;
                         double likelihood = 0.0;
 
-                        //foreach (string uWord in this._uniqueWords)
-                        //{                            
-                        //    foreach (string word in words.Split(' ').ToList())
-                        //    {
-                        //        string wd = word.Split(':')[0];
-                        //        docWords.Add(wd);
-                        //    }
-                        //    if (docWords.Contains(uWord))
-                        //    {
-                        //        likelihood = likelihood + Math.Log10(_likelihood[uWord + "|" + kvp.Key]);
-                        //    }
-                        //    else
-                        //    {
-                        //        likelihood = likelihood + Math.Log10(1 - _likelihood[uWord + "|" + kvp.Key]);
-                        //    }
-                        //    docWords.Clear();
-                        //}
-
-                        // For Bernoulli, try to increase efficiency by limiting prediction to use certain features
-                        // IE: the top likelihoods
-
-                        int i = 1;
-                        foreach (KeyValuePair<string, double> kvp2 in sortedLikelihoods)
+                        foreach (string uWord in this._uniqueWords)
                         {
-                            if (kvp2.Key.Split('|')[1] == kvp.Key)
+                            foreach (string word in words.Split(' ').ToList())
                             {
-                                foreach (string word in words.Split(' ').ToList())
-                                {
-                                    string wd = word.Split(':')[0];
-                                    docWords.Add(wd);
-                                }
-
-                                if (docWords.Contains(kvp2.Key.Split('|')[0]))
-                                {
-                                    likelihood = likelihood + Math.Log10(_likelihood[kvp2.Key.Split('|')[0] + "|" + kvp.Key]);
-                                }
-                                else
-                                {
-                                    likelihood = likelihood + Math.Log10(1 - _likelihood[kvp2.Key.Split('|')[0] + "|" + kvp.Key]);
-                                }
-                                docWords.Clear();
-
-                                i++;
-                                if (i > sortedLikelihoods.Count*this._topPercent)
-                                {
-                                    break;
-                                }
-
+                                string wd = word.Split(':')[0];
+                                docWords.Add(wd);
                             }
+                            if (docWords.Contains(uWord))
+                            {
+                                likelihood = likelihood + Math.Log10(_likelihood[uWord + "|" + kvp.Key]);
+                            }
+                            else
+                            {
+                                likelihood = likelihood + Math.Log10(1 - _likelihood[uWord + "|" + kvp.Key]);
+                            }
+                            docWords.Clear();
                         }
+
 
                         //// Loop each word
                         //foreach (string word in words.Split(' ').ToList())

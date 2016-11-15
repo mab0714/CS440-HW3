@@ -24,9 +24,9 @@ namespace TextClassification
             }
             catch
             {
-                trainingSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\rt-train.txt";
+                trainingSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_train_40topic.txt";
             }
-            
+
             string testSet = "";
             try
             {
@@ -34,7 +34,7 @@ namespace TextClassification
             }
             catch
             {
-                testSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\rt-test.txt";
+                testSet = @"I:\Backup\Masters\UIUC\2016\Fall\CS_440\Homework\3\TextClassification\CS440-HW3\fisher_test_40topic.txt";
             }
 
             string pythonScript = "";
@@ -212,62 +212,6 @@ namespace TextClassification
                 }
             }
 
-            string featureSelection = "";
-            int feature = 0;
-            double topPercent = 0.0;
-            string topPercentStr = "";
-            if (modelToRun > 1)
-            {
-
-                keepAsking = true;
-                while (keepAsking)
-                {
-                    Console.WriteLine("Want to filter for top likelihoods? (integer value)");
-                    Console.WriteLine("1. Yes");
-                    Console.WriteLine("2. No");
-                    featureSelection = Console.ReadLine(); // Read string from console
-                    if (int.TryParse(featureSelection, out feature)) // Try to parse the string as an integer
-                    {
-                        if (feature > 2)
-                        {
-                            Console.WriteLine("Please enter value between 1 and 2!");
-                            continue;
-                        }
-                        else
-                        {
-                            if (feature == 1)
-                            {
-                                Console.WriteLine("Want percentage of the top likelihoods should be used for prediction ? (double value, 0.0 - 1.0)");
-                                topPercentStr = Console.ReadLine();
-                                if (double.TryParse(topPercentStr, out topPercent)) // Try to parse the string as an integer
-                                {
-                                    if (topPercent > 1.0)
-                                    {
-                                        Console.WriteLine("Please enter value between 0.0 and 1.0!");
-                                        continue;
-                                    }
-                                    else
-                                    {
-                                        keepAsking = false;
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Not an double!");
-                                }
-
-
-                            }
-                            keepAsking = false;
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Not an integer!");
-                    }
-                }
-            }
-
             string createWordCloud = "";
             int wCloud = 0;
             keepAsking = true;
@@ -383,27 +327,6 @@ namespace TextClassification
                             break;
                         }
                     }
-
-                    oddsRatio.Clear();
-                    foreach (string word in mnb.UniqueWords)
-                    {
-                        // getVal in class
-                        // class = -1, 1
-                        oddsRatio.Add(word, mnb.Likelihood[word + "|1"] / mnb.Likelihood[word + "|-1"]);
-                    }
-
-                    i = 1;
-                    Console.WriteLine("Top 10 Odds Ratio for class (c1 = 1, c2 = -1): ");
-                    foreach (KeyValuePair<string, double> kvp in oddsRatio.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value))
-                    {
-                        Console.WriteLine("   " + i + ". " + kvp.Key + " : " + kvp.Value);
-                        i++;
-                        if (i > 10)
-                        {
-                            break;
-                        }
-                    }
-
                 }
 
                 string actualVal = "";
@@ -438,11 +361,6 @@ namespace TextClassification
                 ber.Train();
                 DateTime endTrain = DateTime.Now;
                 DateTime startTest = DateTime.Now;
-                if (feature == 1)
-                {
-                    ber.FeatureSelection = feature;
-                    ber.TopPercent = topPercent;
-                }
                 ber.Predict();
                 DateTime endTest = DateTime.Now;
 
@@ -510,26 +428,6 @@ namespace TextClassification
 
                     i = 1;
                     Console.WriteLine("Top 10 Odds Ratio for class (c1 = -1, c2 = 1): ");
-                    foreach (KeyValuePair<string, double> kvp in oddsRatio.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value))
-                    {
-                        Console.WriteLine("   " + i + ". " + kvp.Key + " : " + kvp.Value);
-                        i++;
-                        if (i > 10)
-                        {
-                            break;
-                        }
-                    }
-
-                    oddsRatio.Clear();
-                    foreach (string word in ber.UniqueWords)
-                    {
-                        // getVal in class
-                        // class = -1, 1
-                        oddsRatio.Add(word, ber.Likelihood[word + "|1"] / ber.Likelihood[word + "|-1"]);
-                    }
-
-                    i = 1;
-                    Console.WriteLine("Top 10 Odds Ratio for class (c1 = 1, c2 = -1): ");
                     foreach (KeyValuePair<string, double> kvp in oddsRatio.OrderByDescending(v => v.Value).ToDictionary(x => x.Key, x => x.Value))
                     {
                         Console.WriteLine("   " + i + ". " + kvp.Key + " : " + kvp.Value);
